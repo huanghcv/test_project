@@ -23,6 +23,7 @@ def train_model(train_data, valid_data):
         "tweedie_variance_power": 1.1,
         'verbosity': 1,
         'num_iterations': 1500,
+        # 'num_iterations': 50,
         'num_leaves': 128,
         "min_data_in_leaf": 104,
     }
@@ -71,7 +72,7 @@ def create_train_data(train_start=750, test_start=1800, is_train=True):
 
     # 注意提交格式里有一部分为空
     if not is_train:
-        for day in range(date_end, date_end):
+        for day in range(date_end, date_end+2*28):
             sale_data[f"d_{day}"] = np.nan
 
     sale_data = pd.melt(sale_data,
@@ -177,9 +178,10 @@ def predict_ensemble(train_cols, m_lgb):
 
     sub2 = sub.copy()
     # 把大于28天后的validation替换成evaluation
-    sub2["id"] = sub2["id"].str.replace("validation$", "evaluation")
-    sub = pd.concat([sub, sub2], axis=0, sort=False)
-    sub.to_csv("submissionV3.csv", index=False)
+    # sub2["id"] = sub2["id"].str.replace("validation$", "evaluation")
+    sub2["id"] = sub2["id"].str.replace("evaluation$", "validation")
+    sub = pd.concat([sub2, sub], axis=0, sort=False)
+    sub.to_csv("submission_train_inds.csv", index=False)
 
 
 sale_data = pd.read_pickle('./sale_data_{}.pkl'.format(date_end))
@@ -192,9 +194,11 @@ y_train = sale_data["sales"]
 
 valid_inds = np.random.choice(len(X_train), 10000)
 train_inds = np.array(list(set(range(len(X_train))) - set(valid_inds)))
-train_data = lgb.Dataset(X_train, label=y_train, categorical_feature=cat_feats, free_raw_data=False)
-# train_data = lgb.Dataset(X_train.iloc(train_inds), label=y_train.iloc(train_inds), categorical_feature=cat_feats, free_raw_data=False)
-valid_data = lgb.Dataset(X_train.iloc[valid_inds], label=y_train.iloc[valid_inds], categorical_feature=cat_feats, free_raw_data=False)
+# train_data = lgb.Dataset(X_train, label=y_train, categorical_feature=cat_feats, free_raw_data=False)
+train_data = lgb.Dataset(
+    X_train.iloc[train_inds], label=y_train.iloc[train_inds], categorical_feature=cat_feats, free_raw_data=False)
+valid_data = lgb.Dataset(
+    X_train.iloc[valid_inds], label=y_train.iloc[valid_inds], categorical_feature=cat_feats, free_raw_data=False)
 
 start = time.time()
 print('start lgb')

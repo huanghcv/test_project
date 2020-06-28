@@ -145,7 +145,8 @@ def get_w(sale_usd):
     # 通过聚合矩阵得到不同聚合下的权重
     weight2 = roll_mat_csr * total_sales_usd
 
-    return 12 * weight2 / np.sum(weight2)
+    # return 12 * weight2 / np.sum(weight2)
+    return 1 / 12 * weight2 / np.sum(total_sales_usd)
 
 
 W = get_w(data[['id', 'sale_usd']])
